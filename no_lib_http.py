@@ -36,6 +36,7 @@ def parse_response(response:None):
 def http_get(path='',
              query=None,
              callback=None):
+    pass
     
     
 def dumps(data=None):
