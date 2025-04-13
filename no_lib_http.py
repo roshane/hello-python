@@ -4,7 +4,7 @@ from urllib.parse import urlparse, parse_qs
 import uuid
 
 HTTP_HEADERS = {
-    "content-type": "application/json",
+    "Content-Type": "application/json",
     "x-user-id": "johndoe@gmail.com",
     "Authorization" : f'Bearer {str(uuid.uuid4())}',
     "x-correlator-id": str(uuid.uuid4())
@@ -14,7 +14,7 @@ HTTP_HEADERS = {
 def _request(method="GET", port=443, host='localhost', path='', query=None, data=None, is_ssl=True):
     conn = http.client.HTTPSConnection(host, port=port) if is_ssl else http.client.HTTPConnection(host, port=port)
     url = f'{path}?{query}'
-    conn.request(method=method, url=url, headers=HTTP_HEADERS, body=json.dumps(data) if data is not None else '{}')
+    conn.request(method=method, url=url, headers=HTTP_HEADERS, body=data if data is not None else {})
     response = conn.getresponse()
     parsed = parse_response(response)
     conn.close()
@@ -58,7 +58,7 @@ def http_get(url='', query=None, callback=None):
         else:
             _get_response = _request(method=_method, port=_port, host=_host, path=_path,
                                      query=query if query is not None else None, is_ssl=False)
-        print('http_get', _get_response)
+        #print('http_get', _get_response)
         return _get_response if callback is None else callback(_get_response)
     except Exception as e:
         raise f"Error http_get {str(e)}"
@@ -92,13 +92,21 @@ def to_json(data=None):
 
 
 def main():
-    get_url = "https://jsonplaceholder.typicode.com/todos/1"
+    get_url = "https://jsonplaceholder.typicode.com/todos"
     _get_response = http_get(url=get_url)
-    print('GET response: ', type(_get_response), _get_response)
-    print('typeof _get_response[data]', type(_get_response['data']))
-    _post_response = http_post('https://postman-echo.com/post', data=_get_response['data'])
-    print('POST response', type(_post_response), json_to_str(_post_response['data']))
-    print('typeof _post_response[data]', type(_post_response['data']))
+    #print('GET response: ', type(_get_response), _get_response)
+    _todos = _get_response['data']
+    _todo_ids = list(map(lambda it: it['id'], _todos))
+    print('TODO ids: ', type(_todo_ids), _todo_ids)
+    #print('typeof _get_response[data]', type(_get_response['data']))
+    _post_response_list = list(map(lambda it:http_post('https://postman-echo.com/post', data=it), _todos[:3]))
+    #_post_response = http_post('https://postman-echo.com/post', data=_get_response['data'])
+    #print('POST response', type(_post_response), json_to_str(_post_response['data']))
+    #print('POST response_list', type(_post_response_list), _post_response_list)
+    for r in _post_response_list:
+        print("POST response", type(r), r)
+        print("\n")
+    #print('typeof _post_response[data]', type(_post_response['data']))
 
 
 if __name__ == "__main__":
